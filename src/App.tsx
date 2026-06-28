@@ -25,7 +25,27 @@ export default function App() {
   const [saveStatus, setSaveStatus] = useState('Chưa lưu');
   const [toastMsg, setToastMsg] = useState('');
   const [showToast, setShowToast] = useState(false);
+  const [activeSection, setActiveSection] = useState('section-1');
   const autoSaveTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  // Intersection Observer for scroll spy
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          setActiveSection(entry.target.id);
+        }
+      });
+    }, { rootMargin: '-20% 0px -70% 0px' });
+
+    const sections = ['section-1', 'section-2', 'section-3', 'section-4', 'section-6', 'section-confirm'];
+    sections.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   // Load from Firebase or local storage on mount
   useEffect(() => {
@@ -179,6 +199,23 @@ export default function App() {
   const getVal = (key: string): string => (formData[key] as string) || '';
   const getBool = (key: string): boolean => (formData[key] as boolean) || false;
 
+  const scrollToSection = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) {
+      // account for sticky header height (56px) plus some padding (16px)
+      const offset = 72;
+      const bodyRect = document.body.getBoundingClientRect().top;
+      const elementRect = el.getBoundingClientRect().top;
+      const elementPosition = elementRect - bodyRect;
+      const offsetPosition = elementPosition - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   return (
     <>
       <header className="site-header">
@@ -192,24 +229,24 @@ export default function App() {
         <p className="hero-sub">Yêu cầu công dân kê khai và dán hình đầy đủ trước khi lên nộp hồ sơ</p>
       </div>
 
-      <div className="progress-bar-wrap">
-        <div className="step-pill active"><span className="dot"></span>Bản thân</div>
+      <div className="progress-bar-wrap" style={{ position: 'sticky', top: '56px', zIndex: 90 }}>
+        <div className={`step-pill ${activeSection === 'section-1' ? 'active' : ''}`} onClick={() => scrollToSection('section-1')}><span className="dot"></span>Bản thân</div>
         <span className="step-sep">›</span>
-        <div className="step-pill"><span className="dot"></span>Cha</div>
+        <div className={`step-pill ${activeSection === 'section-2' ? 'active' : ''}`} onClick={() => scrollToSection('section-2')}><span className="dot"></span>Cha</div>
         <span className="step-sep">›</span>
-        <div className="step-pill"><span className="dot"></span>Mẹ</div>
+        <div className={`step-pill ${activeSection === 'section-3' ? 'active' : ''}`} onClick={() => scrollToSection('section-3')}><span className="dot"></span>Mẹ</div>
         <span className="step-sep">›</span>
-        <div className="step-pill"><span className="dot"></span>Vợ / Con</div>
+        <div className={`step-pill ${activeSection === 'section-4' ? 'active' : ''}`} onClick={() => scrollToSection('section-4')}><span className="dot"></span>Vợ / Con</div>
         <span className="step-sep">›</span>
-        <div className="step-pill"><span className="dot"></span>Anh chị em</div>
+        <div className={`step-pill ${activeSection === 'section-6' ? 'active' : ''}`} onClick={() => scrollToSection('section-6')}><span className="dot"></span>Anh chị em</div>
         <span className="step-sep">›</span>
-        <div className="step-pill"><span className="dot"></span>Xác nhận</div>
+        <div className={`step-pill ${activeSection === 'section-confirm' ? 'active' : ''}`} onClick={() => scrollToSection('section-confirm')}><span className="dot"></span>Xác nhận</div>
       </div>
 
       <div className="container">
 
         {/* ══ SECTION 1: BẢN THÂN ══ */}
-        <div className="section-card">
+        <div id="section-1" className="section-card">
           <div className="section-header">
             <span className="section-num">1</span>
             <span className="section-title">Thông tin bản thân</span>
@@ -393,7 +430,7 @@ export default function App() {
         </div>
 
         {/* ══ SECTION 2: HỌ TÊN CHA ══ */}
-        <div className="section-card">
+        <div id="section-2" className="section-card">
           <div className="section-header">
             <span className="section-num">2</span>
             <span className="section-title">Họ tên Cha</span>
@@ -459,7 +496,7 @@ export default function App() {
         </div>
 
         {/* ══ SECTION 3: HỌ TÊN MẸ ══ */}
-        <div className="section-card">
+        <div id="section-3" className="section-card">
           <div className="section-header">
             <span className="section-num">3</span>
             <span className="section-title">Họ tên Mẹ</span>
@@ -547,7 +584,7 @@ export default function App() {
         </div>
 
         {/* ══ SECTION 4: VỢ ══ */}
-        <div className="section-card">
+        <div id="section-4" className="section-card">
           <div className="section-header">
             <span className="section-num">4</span>
             <span className="section-title">Họ tên Vợ</span>
@@ -621,7 +658,7 @@ export default function App() {
         </div>
 
         {/* ══ SECTION 6: ANH CHỊ EM RUỘT ══ */}
-        <div className="section-card">
+        <div id="section-6" className="section-card">
           <div className="section-header">
             <span className="section-num">6</span>
             <span className="section-title">Anh, Chị, Em ruột</span>
@@ -759,7 +796,7 @@ export default function App() {
         </div>
 
         {/* ══ SECTION: ẢNH ══ */}
-        <div className="section-card">
+        <div id="section-confirm" className="section-card">
           <div className="section-header">
             <span className="section-num">📷</span>
             <span className="section-title">Hình 3×4 của công dân (5 ảnh)</span>
