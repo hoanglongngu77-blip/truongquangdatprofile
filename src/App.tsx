@@ -184,12 +184,43 @@ export default function App() {
       const reader = new FileReader();
       reader.onload = (ev) => {
         if (ev.target?.result) {
-          setPhotos(prev => {
-            const next = [...prev];
-            next[index] = ev.target!.result as string;
-            return next;
-          });
-          setSaveStatus('Đang lưu...');
+          const img = new Image();
+          img.onload = () => {
+            // Nén ảnh bằng Canvas để tránh vượt quá giới hạn 1MB của Firestore
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 800;
+            const MAX_HEIGHT = 800;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > MAX_WIDTH) {
+                height *= MAX_WIDTH / width;
+                width = MAX_WIDTH;
+              }
+            } else {
+              if (height > MAX_HEIGHT) {
+                width *= MAX_HEIGHT / height;
+                height = MAX_HEIGHT;
+              }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(img, 0, 0, width, height);
+            
+            // Chất lượng 0.7 cho ảnh JPEG
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+
+            setPhotos(prev => {
+              const next = [...prev];
+              next[index] = compressedBase64;
+              return next;
+            });
+            setSaveStatus('Đang lưu...');
+          };
+          img.src = ev.target.result as string;
         }
       };
       reader.readAsDataURL(file);
