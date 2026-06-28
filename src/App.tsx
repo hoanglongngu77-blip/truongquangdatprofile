@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { db } from './lib/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 type FormData = Record<string, string | boolean>;
 
@@ -27,21 +27,44 @@ export default function App() {
   const [showToast, setShowToast] = useState(false);
   const autoSaveTimeout = useRef<NodeJS.Timeout | null>(null);
 
-  // Load from local storage on mount
+  // Load from Firebase or local storage on mount
   useEffect(() => {
-    const saved = localStorage.getItem('nvqs_dat_react');
-    if (saved) {
+    const loadData = async () => {
       try {
-        const parsed = JSON.parse(saved);
-        setFormData(prev => ({ ...prev, ...parsed.data }));
-        if (parsed.photos) {
-          setPhotos(parsed.photos);
+        const docRef = doc(db, 'submissions', 'truong_quang_dat');
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+          const parsed = docSnap.data();
+          setFormData(prev => ({ ...prev, ...parsed.data }));
+          if (parsed.photos) {
+            setPhotos(parsed.photos);
+          }
+          setSaveStatus('Đã tải dữ liệu từ máy chủ');
+          localStorage.setItem('nvqs_dat_react', JSON.stringify({ data: parsed.data, photos: parsed.photos }));
+          return;
         }
-        setSaveStatus('Đã tải dữ liệu đã lưu');
-      } catch (e) {
-        console.error('Failed to parse local storage data', e);
+      } catch (error) {
+        console.error("Lỗi tải từ Firebase:", error);
       }
-    }
+
+      // Fallback to local storage
+      const saved = localStorage.getItem('nvqs_dat_react');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          setFormData(prev => ({ ...prev, ...parsed.data }));
+          if (parsed.photos) {
+            setPhotos(parsed.photos);
+          }
+          setSaveStatus('Đã tải dữ liệu đã lưu');
+        } catch (e) {
+          console.error('Failed to parse local storage data', e);
+        }
+      }
+    };
+    
+    loadData();
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
