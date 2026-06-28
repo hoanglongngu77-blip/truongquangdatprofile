@@ -182,7 +182,7 @@ export default function App() {
   return (
     <>
       <header className="site-header">
-        <span className="brand">Lý Lịch NVQS</span>
+        <a href="/" className="brand" style={{ textDecoration: 'none' }}>Lý Lịch NVQS</a>
         <span className="badge">Trương Quang Đạt</span>
       </header>
 
